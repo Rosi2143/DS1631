@@ -2,10 +2,10 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include <unistd.h>                //Needed for I2C port
-#include <fcntl.h>                //Needed for I2C port
-#include <sys/ioctl.h>            //Needed for I2C port
-#include <linux/i2c-dev.h>        //Needed for I2C port
+#include <unistd.h>		   //Needed for I2C port
+#include <fcntl.h>		   //Needed for I2C port
+#include <sys/ioctl.h>	 //Needed for I2C port
+#include <linux/i2c-dev.h> //Needed for I2C port
 #include <stdbool.h>
 
 /* command line commands
@@ -21,94 +21,98 @@ sudo i2cget -y 1 0x4C 0xaa
  */
 
 // defines from datasheet
-#define DS1631_START_CONVERT_T        0x51
-#define DS1631_STOP_CONVERT_T        0x22
-#define DS1631_READ_TEMPERATURE        0xAA
-#define DS1631_ACCESS_TH            0xA1
-#define DS1631_ACCESS_TL            0xA2
-#define DS1631_ACCESS_CONFIG        0xAC
-#define DS1631_SOFTWARE_POR            0x54
+#define DS1631_START_CONVERT_T 0x51
+#define DS1631_STOP_CONVERT_T 0x22
+#define DS1631_READ_TEMPERATURE 0xAA
+#define DS1631_ACCESS_TH 0xA1
+#define DS1631_ACCESS_TL 0xA2
+#define DS1631_ACCESS_CONFIG 0xAC
+#define DS1631_SOFTWARE_POR 0x54
 
-#define DS1631_CONFIG_CONVERSTION_DONE_FLAG    (1 << 7)
-    #define DS1631_CONFIG_CONVERSTION_IN_PROGRESS            0
-    #define DS1631_CONFIG_CONVERSTION_COMPLETE                1
-#define DS1631_CONFIG_TEMP_HIGH_FLAG        (1 << 6)
-    #define DS1631_CONFIG_TEMP_HIGH_OVERFLOW_INACTIVE        0
-    #define DS1631_CONFIG_TEMP_HIGH_OVERFLOW_ACTIVE            1
-#define DS1631_CONFIG_TEMP_LOW_FLAG            (1 << 5)
-    #define DS1631_CONFIG_TEMP_LOW_OVERFLOW_INACTIVE        0
-    #define DS1631_CONFIG_TEMP_LOW_OVERFLOW_ACTIVE            1
-#define DS1631_CONFIG_NVM_BUSY_FLAG            (1 << 4)
-    #define DS1631_CONFIG_NVM_NOT_BUSY                        0
-    #define DS1631_CONFIG_NVM_BUSY                            1
-#define DS1631_CONFIG_RESOLUTION_BIT1        (1 << 3)
-#define DS1631_CONFIG_RESOLUTION_BIT0        (1 << 2)
-    #define DS1631_CONFIG_09BIT_094MS                        0
-    #define DS1631_CONFIG_10BIT_188MS                        1
-    #define DS1631_CONFIG_11BIT_375MS                        2
-    #define DS1631_CONFIG_12BIT_750MS                        3
-#define DS1631_CONFIG_TOUT_POLARITY            (1 << 1)
-    #define DS1631_CONFIG_ACTIVE_LOW                        0
-    #define DS1631_CONFIG_ACTIVE_HIGH                        1
-#define DS1631_CONFIG_1SHOT_CONVERSION        (1 << 0)
-    #define DS1631_CONFIG_CONTINUOUS_MODE                    0
-    #define DS1631_CONFIG_ONE_SHOT_MODE                        1
+#define DS1631_CONFIG_CONVERSTION_DONE_FLAG (1 << 7)
+#define DS1631_CONFIG_CONVERSTION_IN_PROGRESS 0
+#define DS1631_CONFIG_CONVERSTION_COMPLETE 1
+#define DS1631_CONFIG_TEMP_HIGH_FLAG (1 << 6)
+#define DS1631_CONFIG_TEMP_HIGH_OVERFLOW_INACTIVE 0
+#define DS1631_CONFIG_TEMP_HIGH_OVERFLOW_ACTIVE 1
+#define DS1631_CONFIG_TEMP_LOW_FLAG (1 << 5)
+#define DS1631_CONFIG_TEMP_LOW_OVERFLOW_INACTIVE 0
+#define DS1631_CONFIG_TEMP_LOW_OVERFLOW_ACTIVE 1
+#define DS1631_CONFIG_NVM_BUSY_FLAG (1 << 4)
+#define DS1631_CONFIG_NVM_NOT_BUSY 0
+#define DS1631_CONFIG_NVM_BUSY 1
+#define DS1631_CONFIG_RESOLUTION_BIT1 (1 << 3)
+#define DS1631_CONFIG_RESOLUTION_BIT0 (1 << 2)
+#define DS1631_CONFIG_09BIT_094MS 0
+#define DS1631_CONFIG_10BIT_188MS 1
+#define DS1631_CONFIG_11BIT_375MS 2
+#define DS1631_CONFIG_12BIT_750MS 3
+#define DS1631_CONFIG_TOUT_POLARITY (1 << 1)
+#define DS1631_CONFIG_ACTIVE_LOW 0
+#define DS1631_CONFIG_ACTIVE_HIGH 1
+#define DS1631_CONFIG_1SHOT_CONVERSION (1 << 0)
+#define DS1631_CONFIG_CONTINUOUS_MODE 0
+#define DS1631_CONFIG_ONE_SHOT_MODE 1
+
 int file_i2c;
 
-int addr = 0x48;          //<<<<<The I2C address of the slave
+int addr = 0x48; //<<<<<The I2C address of the slave
 
+/************************************
+ * general I2C commands
+ ************************************/
 /*!
  * \brief: send a one byte command
  * \param command - byte value of the command
  */
-void i2c_write_byte(int8_t command)
+void i2c_write_byte(unsigned char const *buffer, const int8_t length)
 {
-    int length;
-    unsigned char buffer[1] = {0};
-
-    buffer[0] = command;
-    length = 1;            //<<< Number of bytes to write
-    if (write(file_i2c, buffer, length) != length)        //write() returns the number of bytes actually written, if it doesn't match then an error occurred (e.g. no response from the device)
-    {
-        /* ERROR HANDLING: i2c transaction failed */
-        printf("Failed to write to the i2c bus.\n");
-    }
+	if (write(file_i2c, buffer, length) != length) //write() returns the number of bytes actually written, if it doesn't match then an error occurred (e.g. no response from the device)
+	{
+		/* ERROR HANDLING: i2c transaction failed */
+		printf("Failed to write to the i2c bus.\n");
+	}
 }
 
 /*!
  * \brief: reads a one byte response
  * \return one byte value returned by last command
  */
-bool i2c_read_byte(unsigned char* buffer, int8_t length)
+bool i2c_read_byte(unsigned char *buffer, const int8_t length)
 {
-    int16_t result = 0;
-    if (length > 2)
-    {
-        return 0; // there is no reply for DS1621 with more than 2 bytes
-    }
+	int16_t result = 0;
+	if (length > 2)
+	{
+		return 0; // there is no reply for DS1621 with more than 2 bytes
+	}
 
-    if (read(file_i2c, buffer, length) != length)        //read() returns the number of bytes actually read, if it doesn't match then an error occurred (e.g. no response from the device)
-    {
-        //ERROR HANDLING: i2c transaction failed
-        printf("Failed to read from the i2c bus.\n");
+	if (read(file_i2c, buffer, length) != length) //read() returns the number of bytes actually read, if it doesn't match then an error occurred (e.g. no response from the device)
+	{
+		//ERROR HANDLING: i2c transaction failed
+		printf("Failed to read from the i2c bus.\n");
 		return false;
-    }
-    else
-    {
-        printf("Data read 0: %x\n", buffer[0]);
-        if(length==2)
+	}
+	else
+	{
+		printf("Data read 0: %x\n", buffer[0]);
+		if (length == 2)
 			printf("Data read 1: %x\n", buffer[1]);
-    }
-    return true;
+	}
+	return true;
 }
 
+/**************************************
+ * DS1631 protcol implementation
+ **************************************/
 /*!
  * \brief start the conversion of temperature
  *  sudo i2cset -y 1 0x4C 0xee
  */
 void ds1631_start_convert()
 {
-    i2c_write_byte(DS1631_START_CONVERT_T);
+	unsigned char buffer[1] = {0};
+	buffer[0] = DS1631_START_CONVERT_T;
+	i2c_write_byte(buffer, 1);
 }
 
 /*!
@@ -119,16 +123,17 @@ void ds1631_start_convert()
  */
 float ds1631_read_temperature()
 {
-    unsigned char buffer[2] = {0};
-    i2c_write_byte(DS1631_READ_TEMPERATURE);
-    int16_t temperature = 0;
-	if(i2c_read_byte(buffer, 2))
+	unsigned char buffer[2] = {0};
+	buffer[0] = DS1631_READ_TEMPERATURE;
+	i2c_write_byte(buffer, 1);
+	int16_t temperature = 0;
+	if (i2c_read_byte(buffer, 2))
 	{
-		temperature = buffer[1] + (buffer[0]<<8);
-		printf("Data read: %x\n", temperature);
-		printf("current temperature: %d.%d°C\n", temperature/256,temperature%256);
+		temperature = buffer[1] + (buffer[0] << 8);
+		printf("--Data read: %x\n", temperature);
+		printf("--current temperature: %d.%d°C\n", temperature / 256, temperature % 256);
 	}
-	return (temperature/256 + (temperature%256)/1000);
+	return (temperature / 256 + (temperature % 256) / 1000);
 }
 
 /*!
@@ -136,24 +141,25 @@ float ds1631_read_temperature()
  */
 void ds1631_read_config()
 {
-    //sudo i2cget -y 1 0x4C 0xac
-    unsigned char buffer[1] = {0};
-    i2c_write_byte(DS1631_ACCESS_CONFIG);
-    int8_t config = 0;
-	if(i2c_read_byte(buffer, 1))
+	//sudo i2cget -y 1 0x4C 0xac
+	unsigned char buffer[1] = {0};
+	buffer[0] = DS1631_ACCESS_CONFIG;
+	i2c_write_byte(buffer, 1);
+	int8_t config = 0;
+	if (i2c_read_byte(buffer, 1))
 	{
 		config = buffer[0];
-    	printf("Config: %d\n", config);
-		if(config & DS1631_CONFIG_CONVERSTION_DONE_FLAG)
+		printf("--Config: %d\n", config);
+		if (config & DS1631_CONFIG_CONVERSTION_DONE_FLAG)
 		{
-			printf("\tconfig: Converstion done\n");
+			printf("\tconfig: Conversion done\n");
 		}
 		else
 		{
-			printf("\tconfig: Converstion in progress\n");
+			printf("\tconfig: Conversion in progress\n");
 		}
-		
-		if(config & DS1631_CONFIG_TEMP_HIGH_FLAG)
+
+		if (config & DS1631_CONFIG_TEMP_HIGH_FLAG)
 		{
 			printf("\tconfig: HighTemp overflow active\n");
 		}
@@ -162,7 +168,7 @@ void ds1631_read_config()
 			printf("\tconfig: HighTemp overflow inactive\n");
 		}
 
-		if(config & DS1631_CONFIG_TEMP_LOW_FLAG)
+		if (config & DS1631_CONFIG_TEMP_LOW_FLAG)
 		{
 			printf("\tconfig: LowTemp overflow active\n");
 		}
@@ -171,7 +177,7 @@ void ds1631_read_config()
 			printf("\tconfig: LowTemp overflow inactive\n");
 		}
 
-		if(config & DS1631_CONFIG_NVM_BUSY_FLAG)
+		if (config & DS1631_CONFIG_NVM_BUSY_FLAG)
 		{
 			printf("\tconfig: NvM write in progress\n");
 		}
@@ -181,25 +187,25 @@ void ds1631_read_config()
 		}
 
 		int8_t ResolutionAndTime = config & (DS1631_CONFIG_RESOLUTION_BIT1 | DS1631_CONFIG_RESOLUTION_BIT0);
-		ResolutionAndTime = ResolutionAndTime>>2;
-		if(ResolutionAndTime==DS1631_CONFIG_09BIT_094MS)
+		ResolutionAndTime = ResolutionAndTime >> 2;
+		if (ResolutionAndTime == DS1631_CONFIG_09BIT_094MS)
 		{
 			printf("\tconfig: accuracy 8Bit, cycle 93.75ms\n");
 		}
-		else if(ResolutionAndTime==DS1631_CONFIG_10BIT_188MS)
+		else if (ResolutionAndTime == DS1631_CONFIG_10BIT_188MS)
 		{
 			printf("\tconfig: accuracy 9Bit, cycle 187.5ms\n");
 		}
-		else if(ResolutionAndTime==DS1631_CONFIG_11BIT_375MS)
+		else if (ResolutionAndTime == DS1631_CONFIG_11BIT_375MS)
 		{
 			printf("\tconfig: accuracy 11Bit, cycle 375ms\n");
 		}
-		else if(ResolutionAndTime==DS1631_CONFIG_12BIT_750MS)
+		else if (ResolutionAndTime == DS1631_CONFIG_12BIT_750MS)
 		{
 			printf("\tconfig: accuracy 12Bit, cycle 750ms\n");
 		}
 
-		if(config & DS1631_CONFIG_TOUT_POLARITY)
+		if (config & DS1631_CONFIG_TOUT_POLARITY)
 		{
 			printf("\tconfig: Polarity is HIGH\n");
 		}
@@ -207,8 +213,7 @@ void ds1631_read_config()
 		{
 			printf("\tconfig: Polarity is LOW\n");
 		}
-
-		if(config & DS1631_CONFIG_1SHOT_CONVERSION)
+		if (config & DS1631_CONFIG_1SHOT_CONVERSION)
 		{
 			printf("\tconfig: OneShot conversion is active\n");
 		}
@@ -221,19 +226,37 @@ void ds1631_read_config()
 
 /*!
  * \brief read the upper temperature limit
+ * 
+ * \param temperature of upper limit in °C
  */
-void ds1631_read_upper_temp_trip_point()
+float ds1631_read_upper_temp_trip_point()
 {
-    //sudo i2cget -y 1 0x4C 0xa1
-    unsigned char buffer[2] = {0};
-    i2c_write_byte(DS1631_ACCESS_TH);
-    int16_t templimit = 0;
-	if(i2c_read_byte(buffer, 2))
+	//sudo i2cget -y 1 0x4C 0xa1
+	unsigned char buffer[2] = {0};
+	buffer[0] = DS1631_ACCESS_TH;
+	i2c_write_byte(buffer, 1);
+	int16_t templimit = 0;
+	if (i2c_read_byte(buffer, 2))
 	{
-		templimit = buffer[1] + (buffer[0]<<8);
-		printf("Data read: %x\n", templimit);
-		printf("UpperLimit: %d.%d°C\n", templimit/256,templimit%256);
+		templimit = buffer[1] + (buffer[0] << 8);
+		printf("--Data read: %x\n", templimit);
+		printf("--UpperLimit: %d.%d°C\n", templimit / 256, templimit % 256);
 	}
+
+	return (templimit / 256 + (templimit % 256) / 1000);
+}
+
+/*!
+ * \brief write the upper temperature limit
+ */
+bool ds1631_write_upper_temp_trip_point(float tempLimit)
+{
+	//sudo i2cget -y 1 0x4C 0xa1
+	unsigned char buffer[3] = {0};
+	buffer[0] = DS1631_ACCESS_TH;
+	buffer[1] = (int8_t)tempLimit;
+	buffer[2] = 0;
+	i2c_write_byte(buffer, 3);
 }
 
 /*!
@@ -241,44 +264,62 @@ void ds1631_read_upper_temp_trip_point()
  */
 void ds1631_read_lower_temp_trip_point()
 {
-    //sudo i2cget -y 1 0x4C 0xa1
-    unsigned char buffer[2] = {0};
-    i2c_write_byte(DS1631_ACCESS_TL);
-    int16_t templimit = 0;
-	if(i2c_read_byte(buffer, 2))
+	//sudo i2cget -y 1 0x4C 0xa1
+	unsigned char buffer[2] = {0};
+	buffer[0] =  DS1631_ACCESS_TL;
+	i2c_write_byte(buffer, 1);
+	int16_t templimit = 0;
+	if (i2c_read_byte(buffer, 2))
 	{
-		templimit = buffer[1] + (buffer[0]<<8);
-		printf("Data read: %x\n", templimit);
-		printf("LowerLimit: %d.%d°C\n", templimit/256,templimit%256);
+		templimit = buffer[1] + (buffer[0] << 8);
+		printf("--Data read: %x\n", templimit);
+		printf("--LowerLimit: %d.%d°C\n", templimit / 256, templimit % 256);
 	}
 }
 
+/*!
+ * \brief write the lower temperature limit
+ */
+bool ds1631_write_lower_temp_trip_point(float tempLimit)
+{
+	//sudo i2cget -y 1 0x4C 0xa1
+	unsigned char buffer[3] = {0};
+	buffer[0] = DS1631_ACCESS_TL;
+	buffer[1] = (int8_t)tempLimit;
+	buffer[2] = 0;
+	i2c_write_byte(buffer, 3);
+}
+
 int main(void)
-{    
-    //----- OPEN THE I2C BUS -----
-    char *filename = (char*)"/dev/i2c-1";
-    if ((file_i2c = open(filename, O_RDWR)) < 0)
-    {
-        //ERROR HANDLING: you can check errno to see what went wrong
-        printf("Failed to open the i2c bus");
-        return 1;
-    }
-    
-    if (ioctl(file_i2c, I2C_SLAVE, addr) < 0)
-    {
-        printf("Failed to acquire bus access and/or talk to slave.\n");
-        //ERROR HANDLING; you can check errno to see what went wrong
-        return 1;
-    }
-    
-    
-    //----- WRITE BYTES -----
-    ds1631_start_convert();
-    
-    ds1631_read_temperature();
-    
-    ds1631_read_config();
+{
+	//----- OPEN THE I2C BUS -----
+	char *filename = (char *)"/dev/i2c-1";
+	if ((file_i2c = open(filename, O_RDWR)) < 0)
+	{
+		//ERROR HANDLING: you can check errno to see what went wrong
+		printf("Failed to open the i2c bus");
+		return 1;
+	}
+
+	if (ioctl(file_i2c, I2C_SLAVE, addr) < 0)
+	{
+		printf("Failed to acquire bus access and/or talk to slave.\n");
+		//ERROR HANDLING; you can check errno to see what went wrong
+		return 1;
+	}
+
+	//----- WRITE BYTES -----
+	ds1631_start_convert();
+
+	ds1631_read_temperature();
+
+	ds1631_read_config();
 
 	ds1631_read_upper_temp_trip_point();
+	ds1631_write_upper_temp_trip_point(30.4);
+	ds1631_read_upper_temp_trip_point();
+
+	ds1631_read_lower_temp_trip_point();
+	ds1631_write_lower_temp_trip_point(30.4);
 	ds1631_read_lower_temp_trip_point();
 }
