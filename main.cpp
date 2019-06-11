@@ -9,26 +9,40 @@
  * 
  */
 
+#include <list>
 #include "ds1631.hpp"
 
 int main(int ac, char **av)
 {
-    I2C_Device i2c_device(72 /*0x48 */);
-    DS1631 ds1631(&i2c_device);
+    std::list<DS1631> ds1631_list;
 
-    ds1631.StartConvert();
+    I2C_Device i2c_device_4b(0x4b);
+    DS1631 ds1631_4b(&i2c_device_4b);
+    ds1631_list.push_back(ds1631_4b);
 
-    ds1631.ReadTemperature();
+    I2C_Device i2c_device_4c(0x4c);
+    DS1631 ds1631_4c(&i2c_device_4c);
+    ds1631_list.push_back(ds1631_4c);
 
-    ds1631.ReadConfig();
+    I2C_Device i2c_device_4f(0x4f);
+    DS1631 ds1631_4f(&i2c_device_4f);
+    ds1631_list.push_back(ds1631_4f);
 
-    ds1631.ReadUpperTempTripPoint();
-    ds1631.WriteUpperTempTripPoint(30.4);
-    ds1631.ReadUpperTempTripPoint();
+    for (auto &ds1631_elem : ds1631_list)
+    {
+        ds1631_elem.StartConvert();
 
-    ds1631.ReadLowerTempTripPoint();
-    ds1631.WriteLowerTempTripPoint(30.4);
-    ds1631.ReadLowerTempTripPoint();
+        ds1631_elem.ReadTemperature();
 
+        ds1631_elem.ReadConfig();
+
+        ds1631_elem.ReadUpperTempTripPoint();
+        ds1631_elem.WriteUpperTempTripPoint(30.4);
+        ds1631_elem.ReadUpperTempTripPoint();
+
+        ds1631_elem.ReadLowerTempTripPoint();
+        ds1631_elem.WriteLowerTempTripPoint(20.6);
+        ds1631_elem.ReadLowerTempTripPoint();
+    }
     return(0);
 }

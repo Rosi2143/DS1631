@@ -17,4 +17,6 @@ public:
 
     virtual void WriteByte(unsigned char const *buffer, const int length) = 0;
     virtual bool ReadByte(unsigned char *buffer, const int length) = 0;
+
+    virtual int getAddress() = 0;
 };

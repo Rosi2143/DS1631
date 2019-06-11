@@ -19,6 +19,8 @@ public:
 
     virtual void WriteByte(unsigned char const *buffer, const int length);
     virtual bool ReadByte(unsigned char *buffer, const int length);
+
+    virtual int getAddress(){return addr;}
 private:
     int file_i2c;
     /**

@@ -23,40 +23,6 @@ sudo i2cget -y 1 0x4C 0xaa
 
  */
 
-// defines from datasheet
-#define DS1631_START_CONVERT_T 0x51
-#define DS1631_STOP_CONVERT_T 0x22
-#define DS1631_READ_TEMPERATURE 0xAA
-#define DS1631_ACCESS_TH 0xA1
-#define DS1631_ACCESS_TL 0xA2
-#define DS1631_ACCESS_CONFIG 0xAC
-#define DS1631_SOFTWARE_POR 0x54
-
-#define DS1631_CONFIG_CONVERSTION_DONE_FLAG (1 << 7)
-#define DS1631_CONFIG_CONVERSTION_IN_PROGRESS 0
-#define DS1631_CONFIG_CONVERSTION_COMPLETE 1
-#define DS1631_CONFIG_TEMP_HIGH_FLAG (1 << 6)
-#define DS1631_CONFIG_TEMP_HIGH_OVERFLOW_INACTIVE 0
-#define DS1631_CONFIG_TEMP_HIGH_OVERFLOW_ACTIVE 1
-#define DS1631_CONFIG_TEMP_LOW_FLAG (1 << 5)
-#define DS1631_CONFIG_TEMP_LOW_OVERFLOW_INACTIVE 0
-#define DS1631_CONFIG_TEMP_LOW_OVERFLOW_ACTIVE 1
-#define DS1631_CONFIG_NVM_BUSY_FLAG (1 << 4)
-#define DS1631_CONFIG_NVM_NOT_BUSY 0
-#define DS1631_CONFIG_NVM_BUSY 1
-#define DS1631_CONFIG_RESOLUTION_BIT1 (1 << 3)
-#define DS1631_CONFIG_RESOLUTION_BIT0 (1 << 2)
-#define DS1631_CONFIG_09BIT_094MS 0
-#define DS1631_CONFIG_10BIT_188MS 1
-#define DS1631_CONFIG_11BIT_375MS 2
-#define DS1631_CONFIG_12BIT_750MS 3
-#define DS1631_CONFIG_TOUT_POLARITY (1 << 1)
-#define DS1631_CONFIG_ACTIVE_LOW 0
-#define DS1631_CONFIG_ACTIVE_HIGH 1
-#define DS1631_CONFIG_1SHOT_CONVERSION (1 << 0)
-#define DS1631_CONFIG_CONTINUOUS_MODE 0
-#define DS1631_CONFIG_ONE_SHOT_MODE 1
-
 class DS1631
 {
 private:
@@ -67,6 +33,7 @@ public:
     ~DS1631();
 
     void StartConvert();
+    void StopConvert();
     float ReadTemperature();
     void ReadConfig();
     float ReadUpperTempTripPoint();
@@ -75,6 +42,6 @@ public:
     bool WriteLowerTempTripPoint(float tempLimit);
 
 protected:
-    void ConvertInt2Compl(const int value &, short byte1, short byte2);
-    void ConvertInt2Compl(const short &byte1, const short &byte2, int value);
+    void ConvertCompl2Byte(const float &complement, short& int_byte, short& float_byte);
+    void ConvertByte2Compl(const short &int_byte, const short &float_byte, float& complement);
 };
