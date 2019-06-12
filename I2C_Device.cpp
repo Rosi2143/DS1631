@@ -23,7 +23,7 @@
  * @brief Construct a new i2c device::i2c device object
  * 
  */
-I2C_Device::I2C_Device(int device_id) : addr(device_id)
+I2C_Device::I2C_Device(int device_id, bool verb) : addr(device_id),verbose(verb) 
 {
     //----- OPEN THE I2C BUS -----
     char *filename = (char *)"/dev/i2c-1";
@@ -56,14 +56,19 @@ I2C_Device::~I2C_Device()
  * @param buffer 
  * @param length 
  */
-void I2C_Device::WriteByte(unsigned char const *buffer, const int length)
+bool I2C_Device::WriteByte(unsigned char const *buffer, const int length)
 {
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << getAddress() << ")" << std::endl;
+    bool ret = true;
+    if (verbose)
+        std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << getAddress() << ")" << std::endl;
+
     if (write(file_i2c, buffer, length) != length) //write() returns the number of bytes actually written, if it doesn't match then an error occurred (e.g. no response from the device)
     {
         /* ERROR HANDLING: i2c transaction failed */
         std::cout << "Failed to write to the i2c bus." << std::endl;
+        ret = false;
     }
+    return ret;
 }
 
 /**
@@ -75,7 +80,8 @@ void I2C_Device::WriteByte(unsigned char const *buffer, const int length)
  */
 bool I2C_Device::ReadByte(unsigned char *buffer, const int length)
 {
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << getAddress() << ")" << std::endl;
+    if (verbose)
+        std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << getAddress() << ")" << std::endl;
     int16_t result = 0;
     if (length > 2)
     {
@@ -90,9 +96,11 @@ bool I2C_Device::ReadByte(unsigned char *buffer, const int length)
     }
     else
     {
-        std::cout << "Data read 0: " << std::hex << std::setw(2) << std::setfill('0') << (int)buffer[0] << std::endl;
+        if (verbose)
+            std::cout << "Data read 0: " << std::hex << std::setw(2) << std::setfill('0') << (int)buffer[0] << std::endl;
         if (length == 2)
-            std::cout << "Data read 1: " << std::hex << std::setw(2) << std::setfill('0') << (int)buffer[1] << std::endl;
+            if (verbose)
+                std::cout << "Data read 1: " << std::hex << std::setw(2) << std::setfill('0') << (int)buffer[1] << std::endl;
     }
     return true;
 }

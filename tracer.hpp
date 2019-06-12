@@ -24,6 +24,7 @@ class tracer
                     return false;
             }
     }
+    void setLogLevel(int logLevel){_logLevel=logLevel;}
             
 private:
     int _logLevel;

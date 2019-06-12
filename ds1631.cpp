@@ -80,17 +80,19 @@ DS1631::~DS1631()
 
 void DS1631::ConvertCompl2Byte(const float & complement, short& int_byte, short& float_byte)
 {
-	std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
-	int_byte = (int)complement;
-	float useit = complement;
+    if (i2c_device->isVerbose())
+        std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    int_byte = (int)complement;
+    float useit = complement;
     float forgetit;
     float_byte = std::modf(useit, &forgetit) * 256;
 }
 
 void DS1631::ConvertByte2Compl(const short& int_byte, const short& float_byte, float& complement)
 {
-	std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
-	complement = int_byte + (float)float_byte / 256;
+    if (i2c_device->isVerbose())
+        std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    complement = int_byte + (float)float_byte / 256;
 }
 
 /**************************************
@@ -100,24 +102,26 @@ void DS1631::ConvertByte2Compl(const short& int_byte, const short& float_byte, f
  * \brief start the conversion of temperature
  *  sudo i2cset -y 1 0x4C 0x51
  */
-void DS1631::StartConvert()
+bool DS1631::StartConvert()
 {
-	std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    if (i2c_device->isVerbose())
+        std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
     unsigned char buffer[1] = {0};
     buffer[0] = DS1631_START_CONVERT_T;
-    i2c_device->WriteByte(buffer, 1);
+    return i2c_device->WriteByte(buffer, 1);
 }
 
 /*!
  * \brief stops the conversion of temperature
  *  sudo i2cset -y 1 0x4C 0x22
  */
-void DS1631::StopConvert()
+bool DS1631::StopConvert()
 {
-	std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    if (i2c_device->isVerbose())
+        std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
     unsigned char buffer[1] = {0};
     buffer[0] = DS1631_STOP_CONVERT_T;
-    i2c_device->WriteByte(buffer, 1);
+    return i2c_device->WriteByte(buffer, 1);
 }
 
 /*!
@@ -128,7 +132,8 @@ void DS1631::StopConvert()
  */
 float DS1631::ReadTemperature()
 {
-	std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    if (i2c_device->isVerbose())
+        std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
     unsigned char buffer[2] = {0};
     buffer[0] = DS1631_READ_TEMPERATURE;
     i2c_device->WriteByte(buffer, 1);
@@ -136,97 +141,281 @@ float DS1631::ReadTemperature()
     if (i2c_device->ReadByte(buffer, 2))
     {
         ConvertByte2Compl(buffer[0] , buffer[1], temperature);
-		std::cout << "--Data read: " << std::dec << std::setprecision(5) << temperature << "°C" << std::endl;
-	}
+        if (i2c_device->isVerbose())
+            std::cout << "--Data read: " << std::dec << std::setprecision(5) << temperature << "°C" << std::endl;
+    }
     return temperature;
 }
 
-/*!
- * \brief read the config register and print the result
+//**************
+// config read
+//**************
+/**
+ * @brief 
+ * 
+ * @return true 
+ * @return false 
  */
-void DS1631::ReadConfig()
+bool DS1631::ConfigIsConversionDone()
 {
-	std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+	short config=ReadConfig();
+	return (0 != (config & DS1631_CONFIG_CONVERSTION_DONE_FLAG));
+}
+
+bool DS1631::ConfigIsTempHighFlagSet()
+{
+	short config=ReadConfig();
+	return (0 != (config & DS1631_CONFIG_TEMP_HIGH_FLAG));
+}
+
+bool DS1631::ConfigIsTempLowFlagSet()
+{
+	short config=ReadConfig();
+	return (0 != (config & DS1631_CONFIG_TEMP_LOW_FLAG));
+}
+
+bool DS1631::ConfigIsNvMBusy()
+{
+	short config=ReadConfig();
+	return (0 != (config & DS1631_CONFIG_NVM_BUSY_FLAG));
+}
+
+bool DS1631::ConfigIsToutPolarityHigh()
+{
+	short config=ReadConfig();
+	return (0 != (config & DS1631_CONFIG_TOUT_POLARITY));
+}
+
+bool DS1631::ConfigIs1ShotModeActive()
+{
+	short config=ReadConfig();
+	return (0 != (config & DS1631_CONFIG_1SHOT_CONVERSION));
+}
+
+short DS1631::ConfigGetResolutionAndConversionTime()
+{
+	short config=ReadConfig();
+	short ResolutionAndTime = config & (DS1631_CONFIG_RESOLUTION_BIT1 | DS1631_CONFIG_RESOLUTION_BIT0);
+	ResolutionAndTime = ResolutionAndTime >> 2;
+	return ResolutionAndTime;
+}
+
+//***********
+// config set
+//***********
+bool DS1631::SetConfigConversionDone(bool state)
+{
+	short config = ReadConfig();
+	if (state)
+	{
+		config |= DS1631_CONFIG_CONVERSTION_DONE_FLAG;
+	}
+	else
+	{
+		config &= ~DS1631_CONFIG_CONVERSTION_DONE_FLAG;
+	}
+	return WriteConfig(config);
+}
+
+bool DS1631::SetConfigTempHighFlagSet(bool state)
+{
+	short config = ReadConfig();
+	if (state)
+	{
+		config |= DS1631_CONFIG_TEMP_HIGH_FLAG;
+	}
+	else
+	{
+		config &= ~DS1631_CONFIG_TEMP_HIGH_FLAG;
+	}
+	return WriteConfig(config);
+}
+
+bool DS1631::SetConfigTempLowFlagSet(bool state)
+{
+	short config = ReadConfig();
+	if (state)
+	{
+		config |= DS1631_CONFIG_TEMP_LOW_FLAG;
+	}
+	else
+	{
+		config &= ~DS1631_CONFIG_TEMP_LOW_FLAG;
+	}
+	return WriteConfig(config);
+}
+
+bool DS1631::SetConfigNvMBusy(bool state)
+{
+	short config = ReadConfig();
+	if (state)
+	{
+		config |= DS1631_CONFIG_NVM_BUSY_FLAG;
+	}
+	else
+	{
+		config &= ~DS1631_CONFIG_NVM_BUSY_FLAG;
+	}
+	return WriteConfig(config);
+}
+
+bool DS1631::SetConfigToutPolarityHigh(bool state)
+{
+	short config = ReadConfig();
+	if (state)
+	{
+		config |= DS1631_CONFIG_TOUT_POLARITY;
+	}
+	else
+	{
+		config &= ~DS1631_CONFIG_TOUT_POLARITY;
+	}
+	return WriteConfig(config);
+}
+
+bool DS1631::SetConfig1ShotModeActive(bool state)
+{
+	short config = ReadConfig();
+	if (state)
+	{
+		config |= DS1631_CONFIG_1SHOT_CONVERSION;
+	}
+	else
+	{
+		config &= ~DS1631_CONFIG_1SHOT_CONVERSION;
+	}
+	return WriteConfig(config);
+}
+
+bool DS1631::ConfigSetResolutionAndConversionTime(short ResolutionAndConverstionTime)
+{
+	short config = ReadConfig();
+	config &= ~ (3<<2); // clear both bits first
+	config |= (ResolutionAndConverstionTime<<2);
+	return WriteConfig(config);
+}
+
+/**
+ * \brief read the config register and print the result
+ * 
+ * @return short complete config of DS1631 - see datasheet
+ */
+short DS1631::ReadConfig()
+{
+    if (i2c_device->isVerbose())
+        std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
     //sudo i2cget -y 1 0x4C 0xac
     unsigned char buffer[1] = {0};
     buffer[0] = DS1631_ACCESS_CONFIG;
     i2c_device->WriteByte(buffer, 1);
-    int8_t config = 0;
+    short config = 0;
     if (i2c_device->ReadByte(buffer, 1))
     {
         config = buffer[0];
-        std::cout << "--Config: " << config << std::endl;
-        if (config & DS1631_CONFIG_CONVERSTION_DONE_FLAG)
-        {
-            std::cout << "\tconfig: Conversion done" << std::endl;
-        }
-        else
-        {
-            std::cout << "\tconfig: Conversion in progress" << std::endl;
-        }
+        if (i2c_device->isVerbose())
+            std::cout << "--Config: " << config << std::endl;
+    }
 
-        if (config & DS1631_CONFIG_TEMP_HIGH_FLAG)
-        {
-            std::cout << "\tconfig: HighTemp overflow active" << std::endl;
-        }
-        else
-        {
-            std::cout << "\tconfig: HighTemp overflow inactive" << std::endl;
-        }
+    return config;
+}
 
-        if (config & DS1631_CONFIG_TEMP_LOW_FLAG)
-        {
-            std::cout << "\tconfig: LowTemp overflow active" << std::endl;
-        }
-        else
-        {
-            std::cout << "\tconfig: LowTemp overflow inactive" << std::endl;
-        }
+bool DS1631::WriteConfig(short config)
+{
+    if (i2c_device->isVerbose())
+        std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    unsigned char buffer[2] = {0};
+    buffer[0] = DS1631_ACCESS_CONFIG;
+	buffer[1] = config;
+    return i2c_device->WriteByte(buffer, 2);
+}
 
-        if (config & DS1631_CONFIG_NVM_BUSY_FLAG)
-        {
-            std::cout << "\tconfig: NvM write in progress" << std::endl;
-        }
-        else
-        {
-            std::cout << "\tconfig: NvM write done" << std::endl;
-        }
+void DS1631::EvalConfig()
+{
+    if (ConfigIsConversionDone())
+    {
+        if (i2c_device->isVerbose())
+            std::cout << "\tconfig(" << i2c_device->getAddress() << "): Conversion done" << std::endl;
+    }
+    else
+    {
+        if (i2c_device->isVerbose())
+            std::cout << "\tconfig(" << i2c_device->getAddress() << "): Conversion in progress" << std::endl;
+    }
 
-        int8_t ResolutionAndTime = config & (DS1631_CONFIG_RESOLUTION_BIT1 | DS1631_CONFIG_RESOLUTION_BIT0);
-        ResolutionAndTime = ResolutionAndTime >> 2;
-        if (ResolutionAndTime == DS1631_CONFIG_09BIT_094MS)
-        {
-            std::cout << "\tconfig: accuracy 8Bit, cycle 93.75ms" << std::endl;
-        }
-        else if (ResolutionAndTime == DS1631_CONFIG_10BIT_188MS)
-        {
-            std::cout << "\tconfig: accuracy 9Bit, cycle 187.5ms" << std::endl;
-        }
-        else if (ResolutionAndTime == DS1631_CONFIG_11BIT_375MS)
-        {
-            std::cout << "\tconfig: accuracy 11Bit, cycle 375ms" << std::endl;
-        }
-        else if (ResolutionAndTime == DS1631_CONFIG_12BIT_750MS)
-        {
-            std::cout << "\tconfig: accuracy 12Bit, cycle 750ms" << std::endl;
-        }
+    if (ConfigIsTempHighFlagSet())
+    {
+        if (i2c_device->isVerbose())
+            std::cout << "\tconfig(" << i2c_device->getAddress() << "): HighTemp overflow active" << std::endl;
+    }
+    else
+    {
+        if (i2c_device->isVerbose())
+            std::cout << "\tconfig(" << i2c_device->getAddress() << "): HighTemp overflow inactive" << std::endl;
+    }
 
-        if (config & DS1631_CONFIG_TOUT_POLARITY)
-        {
-            std::cout << "\tconfig: Polarity is HIGH" << std::endl;
-        }
-        else
-        {
-            std::cout << "\tconfig: Polarity is LOW" << std::endl;
-        }
-        if (config & DS1631_CONFIG_1SHOT_CONVERSION)
-        {
-            std::cout << "\tconfig: OneShot conversion is active" << std::endl;
-        }
-        else
-        {
-            std::cout << "\tconfig: continuous conversion is active" << std::endl;
-        }
+    if (ConfigIsTempLowFlagSet())
+    {
+        if (i2c_device->isVerbose())
+            std::cout << "\tconfig(" << i2c_device->getAddress() << "): LowTemp overflow active" << std::endl;
+    }
+    else
+    {
+        if (i2c_device->isVerbose())
+            std::cout << "\tconfig(" << i2c_device->getAddress() << "): LowTemp overflow inactive" << std::endl;
+    }
+
+    if (ConfigIsNvMBusy())
+    {
+        if (i2c_device->isVerbose())
+            std::cout << "\tconfig(" << i2c_device->getAddress() << "): NvM write in progress" << std::endl;
+    }
+    else
+    {
+        if (i2c_device->isVerbose())
+            std::cout << "\tconfig(" << i2c_device->getAddress() << "): NvM write done" << std::endl;
+    }
+
+	short ResolutionAndTime = ConfigGetResolutionAndConversionTime();
+	if (ResolutionAndTime == DS1631_CONFIG_09BIT_094MS)
+	{
+        if (i2c_device->isVerbose())
+            std::cout << "\tconfig(" << i2c_device->getAddress() << "): accuracy 8Bit, cycle 93.75ms" << std::endl;
+    }
+    else if (ResolutionAndTime == DS1631_CONFIG_10BIT_188MS)
+    {
+        if (i2c_device->isVerbose())
+            std::cout << "\tconfig(" << i2c_device->getAddress() << "): accuracy 9Bit, cycle 187.5ms" << std::endl;
+    }
+    else if (ResolutionAndTime == DS1631_CONFIG_11BIT_375MS)
+    {
+        if (i2c_device->isVerbose())
+            std::cout << "\tconfig(" << i2c_device->getAddress() << "): accuracy 11Bit, cycle 375ms" << std::endl;
+    }
+    else if (ResolutionAndTime == DS1631_CONFIG_12BIT_750MS)
+    {
+        if (i2c_device->isVerbose())
+            std::cout << "\tconfig(" << i2c_device->getAddress() << "): accuracy 12Bit, cycle 750ms" << std::endl;
+    }
+
+    if (ConfigIsToutPolarityHigh())
+    {
+        if (i2c_device->isVerbose())
+            std::cout << "\tconfig(" << i2c_device->getAddress() << "): Polarity is HIGH" << std::endl;
+    }
+    else
+    {
+        if (i2c_device->isVerbose())
+            std::cout << "\tconfig(" << i2c_device->getAddress() << "): Polarity is LOW" << std::endl;
+    }
+    if (ConfigIs1ShotModeActive())
+    {
+        if (i2c_device->isVerbose())
+            std::cout << "\tconfig(" << i2c_device->getAddress() << "): OneShot conversion is active" << std::endl;
+    }
+    else
+    {
+        if (i2c_device->isVerbose())
+            std::cout << "\tconfig(" << i2c_device->getAddress() << "): continuous conversion is active" << std::endl;
     }
 }
 
@@ -237,7 +426,8 @@ void DS1631::ReadConfig()
  */
 float DS1631::ReadUpperTempTripPoint()
 {
-	std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    if (i2c_device->isVerbose())
+        std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
     //sudo i2cget -y 1 0x4C 0xa1
     unsigned char buffer[2] = {0};
     buffer[0] = DS1631_ACCESS_TH;
@@ -245,8 +435,9 @@ float DS1631::ReadUpperTempTripPoint()
     float templimit = 0;
     if (i2c_device->ReadByte(buffer, 2))
     {
-		ConvertByte2Compl(buffer[0], buffer[1], templimit);
-		std::cout << "--UpperLimit: " << std::dec << std::setprecision(2) << templimit << "°C" << std::endl;
+        ConvertByte2Compl(buffer[0], buffer[1], templimit);
+        if (i2c_device->isVerbose())
+            std::cout << "--UpperLimit: " << std::dec << std::setprecision(2) << templimit << "°C" << std::endl;
     }
 
     return templimit;
@@ -257,23 +448,25 @@ float DS1631::ReadUpperTempTripPoint()
  */
 bool DS1631::WriteUpperTempTripPoint(float tempLimit)
 {
-	std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
-	//sudo i2cget -y 1 0x4C 0xa1
-	unsigned char buffer[3] = {0};
- 	short int_byte, float_byte;
-	ConvertCompl2Byte(tempLimit, int_byte, float_byte);
-	buffer[0] = DS1631_ACCESS_TH;
-	buffer[1] = int_byte;
-	buffer[2] = float_byte;
-    i2c_device->WriteByte(buffer, 3);
+    if (i2c_device->isVerbose())
+        std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    //sudo i2cget -y 1 0x4C 0xa1
+    unsigned char buffer[3] = {0};
+     short int_byte, float_byte;
+    ConvertCompl2Byte(tempLimit, int_byte, float_byte);
+    buffer[0] = DS1631_ACCESS_TH;
+    buffer[1] = int_byte;
+    buffer[2] = float_byte;
+    return i2c_device->WriteByte(buffer, 3);
 }
 
 /*!
  * \brief read the lower temperature limit
  */
-void DS1631::ReadLowerTempTripPoint()
+float DS1631::ReadLowerTempTripPoint()
 {
-	std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    if (i2c_device->isVerbose())
+        std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
     //sudo i2cget -y 1 0x4C 0xa1
     unsigned char buffer[2] = {0};
     buffer[0] =  DS1631_ACCESS_TL;
@@ -281,9 +474,11 @@ void DS1631::ReadLowerTempTripPoint()
     float templimit = 0;
     if (i2c_device->ReadByte(buffer, 2))
     {
-		ConvertByte2Compl(buffer[0], buffer[1], templimit);
-		std::cout << "--LowerLimit: " << std::dec << std::setprecision(2) << templimit << "°C" << std::endl;
-	}
+        ConvertByte2Compl(buffer[0], buffer[1], templimit);
+        if (i2c_device->isVerbose())
+            std::cout << "--LowerLimit: " << std::dec << std::setprecision(2) << templimit << "°C" << std::endl;
+    }
+    return templimit;
 }
 
 /*!
@@ -291,13 +486,14 @@ void DS1631::ReadLowerTempTripPoint()
  */
 bool DS1631::WriteLowerTempTripPoint(float tempLimit)
 {
-	std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
-	//sudo i2cget -y 1 0x4C 0xa1
+    if (i2c_device->isVerbose())
+        std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    //sudo i2cget -y 1 0x4C 0xa1
     unsigned char buffer[3] = {0};
-	short int_byte, float_byte;
-	ConvertCompl2Byte(tempLimit, int_byte, float_byte);
-	buffer[0] = DS1631_ACCESS_TL;
-	buffer[1] = int_byte;
-	buffer[2] = float_byte;
-    i2c_device->WriteByte(buffer, 3);
+    short int_byte, float_byte;
+    ConvertCompl2Byte(tempLimit, int_byte, float_byte);
+    buffer[0] = DS1631_ACCESS_TL;
+    buffer[1] = int_byte;
+    buffer[2] = float_byte;
+    return i2c_device->WriteByte(buffer, 3);
 }

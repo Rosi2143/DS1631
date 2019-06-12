@@ -32,14 +32,34 @@ public:
     DS1631(I2C_Device* i2c_dev);
     ~DS1631();
 
-    void StartConvert();
-    void StopConvert();
+    bool StartConvert();
+    bool StopConvert();
     float ReadTemperature();
-    void ReadConfig();
+    short ReadConfig();
+    void EvalConfig();
+    bool WriteConfig(short config);
     float ReadUpperTempTripPoint();
     bool WriteUpperTempTripPoint(float tempLimit);
-    void ReadLowerTempTripPoint();
+    float ReadLowerTempTripPoint();
     bool WriteLowerTempTripPoint(float tempLimit);
+
+    // config read
+    bool ConfigIsConversionDone();
+    bool ConfigIsTempHighFlagSet();
+    bool ConfigIsTempLowFlagSet();
+    bool ConfigIsNvMBusy();
+    bool ConfigIsToutPolarityHigh();
+    bool ConfigIs1ShotModeActive();
+    short ConfigGetResolutionAndConversionTime();
+
+    // config set
+    bool SetConfigConversionDone(bool state);
+    bool SetConfigTempHighFlagSet(bool state);
+    bool SetConfigTempLowFlagSet(bool state);
+    bool SetConfigNvMBusy(bool state);
+    bool SetConfigToutPolarityHigh(bool state);
+    bool SetConfig1ShotModeActive(bool state);
+    bool ConfigSetResolutionAndConversionTime(short ResolutionAndConverstionTime);
 
 protected:
     void ConvertCompl2Byte(const float &complement, short& int_byte, short& float_byte);

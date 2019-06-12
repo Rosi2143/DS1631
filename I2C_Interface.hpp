@@ -15,8 +15,9 @@ public:
     I2C_Interface(){};
     ~I2C_Interface(){};
 
-    virtual void WriteByte(unsigned char const *buffer, const int length) = 0;
+    virtual bool WriteByte(unsigned char const *buffer, const int length) = 0;
     virtual bool ReadByte(unsigned char *buffer, const int length) = 0;
 
     virtual int getAddress() = 0;
+    virtual bool isVerbose() = 0;
 };
