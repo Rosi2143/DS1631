@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <typeinfo> 
 #include <unistd.h>
 #include <sys/ioctl.h>     //Needed for I2C port
 #include <linux/i2c-dev.h> //Needed for I2C port
@@ -57,6 +58,7 @@ I2C_Device::~I2C_Device()
  */
 void I2C_Device::WriteByte(unsigned char const *buffer, const int length)
 {
+    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << getAddress() << ")" << std::endl;
     if (write(file_i2c, buffer, length) != length) //write() returns the number of bytes actually written, if it doesn't match then an error occurred (e.g. no response from the device)
     {
         /* ERROR HANDLING: i2c transaction failed */
@@ -73,6 +75,7 @@ void I2C_Device::WriteByte(unsigned char const *buffer, const int length)
  */
 bool I2C_Device::ReadByte(unsigned char *buffer, const int length)
 {
+    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << getAddress() << ")" << std::endl;
     int16_t result = 0;
     if (length > 2)
     {

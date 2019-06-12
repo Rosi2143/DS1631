@@ -6,7 +6,7 @@
  * @date 2019-06-10
  * 
  * @copyright Copyright (c) 2019
- * 
+ * MIT license - see license file
  */
 
 #include "I2C_Interface.hpp"

@@ -1,1 +1,0 @@
-c++ ds1631.cpp I2C_Device.cpp main.cpp -o ds1631 -g

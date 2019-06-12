@@ -136,7 +136,7 @@ float DS1631::ReadTemperature()
     if (i2c_device->ReadByte(buffer, 2))
     {
         ConvertByte2Compl(buffer[0] , buffer[1], temperature);
-		std::cout << "--Data read: " << std::dec << std::setprecision(2) << temperature << "°C" << std::endl;
+		std::cout << "--Data read: " << std::dec << std::setprecision(5) << temperature << "°C" << std::endl;
 	}
     return temperature;
 }
