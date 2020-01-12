@@ -9,6 +9,8 @@
  * 
  */
 
+#pragma once
+
 class I2C_Interface
 {
 public:

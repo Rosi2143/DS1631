@@ -9,6 +9,8 @@
  * MIT license - see license file
  */
 
+#pragma once
+
 #include "I2C_Interface.hpp"
 
 class I2C_Device : public I2C_Interface
