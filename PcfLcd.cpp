@@ -37,7 +37,9 @@
 #include <iostream>
 #include <cstdlib>
 #include <cmath>
-#include <ctime>
+#include <iomanip>
+#include <sstream>
+#include <algorithm>
 
 // PCF_LCD ASCII Codes
 #define PCF_LCD_AE  0
@@ -524,7 +526,7 @@ void PcfLcd::put(short character)
 void PcfLcd::print2(std::string text)
 {
   if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << text << " -"<< std::endl;
 
   for (auto character:text)
   {
@@ -611,97 +613,96 @@ void PcfLcd::zahl(float num, short precision)
 
 /*************************************/
 /* Uhrzeit ausgeben                  */
-/* 0= h:m:s, 1= hh:mm:ss, 2= h:m, 3= hh:mm */
+/* 0= hh:mm:ss  (12h)                */
+/* 1= hh:mm:ss  (24h)                */
+/* 2= hh:mm                          */
+/* 3= day - hh:mm                    */
 /*************************************/
 void PcfLcd::time(short format)
 {
   if (i2c_device->isVerbose())
     std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
 
-  std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-  time_t tt = std::chrono::system_clock::to_time_t(now);
-  tm utc_tm = *gmtime(&tt);
-
-  short hour   = utc_tm.tm_hour;
-  short minute = utc_tm.tm_min;
-  short second = utc_tm.tm_sec;
-
-  buffer.clear();
-  if (format && 1)
-    ziff(hour / 10);
-  else if (hour > 9)
-    ziff(hour / 10);
-  else
-    put(' ');
-  ziff(hour % 10);
-  put(':');
-  if (format && 1)
-    ziff(minute / 10);
-  else if (minute > 9)
-    ziff(minute / 10);
-  else
-    put(' ');
-  ziff(minute % 10);
-  if ((format && 2) == 0)
+  std::time_t t = std::time(nullptr);
+  std::tm tm = *std::localtime(&t);
+  std::cout.imbue(std::locale("de_DE.utf8"));
+  std::stringstream transTime;
+  switch(format)
   {
-    put(':');
-    if (format && 1)
-      ziff(second / 10);
-    else if (second>9)
-      ziff(second / 10);
-    else
-      put(' ');
-    ziff(second % 10);
+    case 0:
+    {
+      transTime << std::put_time(&tm, "%I:%M:%S") << std::endl;
+      break;
+    }
+    case 1:
+    {
+      transTime << std::put_time(&tm, "%H:%M:%S") << std::endl;
+      break;
+    }
+    case 2:
+    {
+      transTime << std::put_time(&tm, "%H:%M") << std::endl;
+      break;
+    }
+    case 3:
+    {
+      transTime << std::put_time(&tm, "%a - %H:%M") << std::endl;
+      break;
+    }
+    default:
+    {
+      std::cout << "wrong format - " << format << std::endl;
+    }
   }
-  SendBuffer();
+  
+  std::string time = transTime.str();
+  time.erase(std::remove(time.begin(), time.end(), '\n'), time.end());
+  time.erase(std::remove(time.begin(), time.end(), '\r'), time.end());
+  print2(time);
 }
 
 /*************************************/
 /* Datum ausgeben                    */
-/* 0= d.m.yyyy, 1= dd.mm.yyyy        */
-/* 2= d.m., 3= dd.mm., 4= d.m.yy, 5= dd.mm.yy */
+/* 0= dd.mm.yyyy                     */
+/* 1= dd.mm.                         */
+/* 2= dd.mm.yy                       */
 /*************************************/
 void PcfLcd::date(short format)
 {
   if (i2c_device->isVerbose())
     std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
 
-  std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-  time_t tt = std::chrono::system_clock::to_time_t(now);
-  tm utc_tm = *gmtime(&tt);
-
-  short year  = utc_tm.tm_year + 1900;
-  short month = utc_tm.tm_mon + 1;
-  short day   = utc_tm.tm_mday;
-
-  buffer.clear();
-  if (format && 1)
-    ziff(day / 10);
-  else if (day>9)
-    ziff(day / 10);
-  else
-    put(' ');
-  ziff(day % 10);
-  put('-');
-  if (format && 1)
-    ziff(month / 10);
-  else if (month>9)
-    ziff(month / 10);
-  else 
-    put(' ');
-  ziff(month % 10);
-  put('-');
-  if ((format && 2)==0)
+  std::time_t t = std::time(nullptr);
+  std::tm tm = *std::localtime(&t);
+  std::cout.imbue(std::locale("de_DE.utf8"));
+  std::stringstream transTime;
+  switch(format)
   {
-    if ((format && 4)==0)
+    case 0:
     {
-      ziff(year / 1000);
-      ziff((year / 100) % 10);
+      transTime << std::put_time(&tm, "%d.%m.%Y") << std::endl;
+      break;
     }
-    ziff((year / 10) % 10);
-    ziff(year % 10);
+    case 1:
+    {
+      transTime << std::put_time(&tm, "%d.%m") << std::endl;
+      break;
+    }
+    case 2:
+    {
+      transTime << std::put_time(&tm, "%d.%m.%y") << std::endl;
+      break;
+    }
+    default:
+    {
+      std::cout << "wrong format - " << format << std::endl;
+    }
   }
-  SendBuffer();
+  
+  std::string date = transTime.str();
+  date.erase(std::remove(date.begin(), date.end(), '\n'), date.end());
+  date.erase(std::remove(date.begin(), date.end(), '\r'), date.end());
+  print2(date);
 }
 
 

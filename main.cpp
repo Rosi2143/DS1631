@@ -158,12 +158,18 @@ int main(int ac, char **av)
         display.print2("String");
         display.put('-');
 
-        display.line(2);
+        display.line(1);
         display.zahl(12345);
         display.put('-');
         display.zahl(-4321);
         display.put('-');
         display.zahl(678.90,2);
+
+        display.line(2);
+        display.time(1);
+
+        display.line(3);
+        display.date(2);
     }
     return (0);
 }
