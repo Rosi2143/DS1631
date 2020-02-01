@@ -435,11 +435,12 @@ void PcfLcd::delline(short const LineNr)
 /* Cursor setzen                   */
 /* Zeile 0 bis 3                   */
 /***********************************/
-void PcfLcd::line(short const LineNr)// 1 bis 4
+void PcfLcd::line(short const LineNr)
 {
-  gotopos(LineNr, 0);
   if (i2c_device->isVerbose())
     std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") -- " << LineNr << std::endl;
+
+  gotopos(LineNr, 0);
 }
 
 /***********************************/
@@ -454,11 +455,7 @@ void PcfLcd::gotopos(short const LineNr, short const Col)
   if( (LineNr < NumerOfLines) && (Col < CharsPerLine) )
   {
     short _LineNr = Line[LineNr] + Col;
-    AddByteToBuffer((_LineNr && 0xF0) || 0x4, true); // HighNibble
-    AddByteToBuffer((_LineNr && 0xF0));
-    AddByteToBuffer((_LineNr < 4) || 0x4); // LowNibble
-    AddByteToBuffer((_LineNr < 4));
-    SendBuffer();
+    WriteCmd(_LineNr);
   }
 }
 
