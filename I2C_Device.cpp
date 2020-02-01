@@ -16,6 +16,7 @@
 #include <sys/ioctl.h>     //Needed for I2C port
 #include <linux/i2c-dev.h> //Needed for I2C port
 #include <fcntl.h>
+#include <vector>
 
 #include "I2C_Device.hpp"
 
@@ -60,8 +61,14 @@ bool I2C_Device::WriteByte(unsigned char const *buffer, const int length)
 {
     bool ret = true;
     if (verbose)
-        std::cout << "   " << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << getAddress() << ")" << std::endl;
-
+    {
+      std::cout << "   " << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << getAddress() << ") - " << length << std::endl;
+      std::vector<char> vec(buffer, buffer + length);
+      for (int i: vec) {
+         std::cout << "-" << i << "-";
+      }
+      std::cout << '\n';
+    }
     if (write(file_i2c, buffer, length) != length) //write() returns the number of bytes actually written, if it doesn't match then an error occurred (e.g. no response from the device)
     {
         /* ERROR HANDLING: i2c transaction failed */
@@ -81,7 +88,7 @@ bool I2C_Device::WriteByte(unsigned char const *buffer, const int length)
 bool I2C_Device::ReadByte(unsigned char *buffer, const int length)
 {
     if (verbose)
-        std::cout << "   " << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << getAddress() << ")" << std::endl;
+        std::cout << "   " << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << getAddress() << ")-" << length << std::endl;
     int16_t result = 0;
     if (length > 2)
     {

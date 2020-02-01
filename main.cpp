@@ -119,12 +119,12 @@ int main(int ac, char **av)
                 ds1631_elem.second.StartConvert();
                 if (verbose)
                 {
-                    std::cout << "(0x" << std::hex << ds1631_elem.first << "): Temp=" << ds1631_elem.second.ReadTemperature() << std::endl;
-                    std::cout << "(0x" << std::hex << ds1631_elem.first << "): Config=" << ds1631_elem.second.ReadConfig() << std::endl;
+                    std::cout << "(0x" << std::hex << ds1631_elem.first << "): Temp="   << ds1631_elem.second.ReadTemperature() << std::endl;
+                    std::cout << "(0x" << std::hex << ds1631_elem.first << "): Config=" << ds1631_elem.second.ReadConfig()      << std::endl;
                 }
                 else
                 {
-                    std::cout << ds1631_deice_adress << ":" << std::setprecision(4) << ds1631_elem.second.ReadTemperature() << std::endl;
+                    std::cout << ds1631_device_address << ":" << std::setprecision(4) << ds1631_elem.second.ReadTemperature() << std::endl;
                 }
                 
         /*
@@ -151,6 +151,14 @@ int main(int ac, char **av)
         PcfLcd_map.insert(std::pair<short, PcfLcd>(I2C_Address, display));
 
         display.SetLight(true);
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        display.SetLight(false);
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        display.SetLight(true);
+        display.home();
+        display.clear();
+        display.put('A');
+        std::this_thread::sleep_for(std::chrono::seconds(2));
         std::this_thread::sleep_for(std::chrono::seconds(2));
         display.SetLight(false);
     }
