@@ -150,23 +150,16 @@ int main(int ac, char **av)
         PcfLcd display(&display_device, display_device_address, true);
         PcfLcd_map.insert(std::pair<short, PcfLcd>(I2C_Address, display));
 
-//        display.SetLight(true);
-//        std::this_thread::sleep_for(std::chrono::seconds(2));
-//        display.SetLight(false);
-//        std::this_thread::sleep_for(std::chrono::seconds(2));
-//        display.SetLight(true);
         display.home();
         display.put('A');
         display.put('b');
         display.put('c');
         
         display.line(1);
-        display.put('Z');
-        display.put('y');
-        display.put('x');
-//        std::this_thread::sleep_for(std::chrono::seconds(2));
-        std::this_thread::sleep_for(std::chrono::seconds(2));
-//        display.SetLight(false);
+        display.print2("String");
+
+        display.line(2);
+        display.ziff(0);
     }
     return (0);
 }

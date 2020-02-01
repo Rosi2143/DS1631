@@ -509,7 +509,7 @@ void PcfLcd::setcursor(short cursor)
 void PcfLcd::put(short character)
 {
   if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << character << std::endl;
+    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << (char)character << std::endl;
 
   WriteData(character);
 }
@@ -525,27 +525,8 @@ void PcfLcd::print2(std::string text)
 
   for (auto character:text)
   {
-    /*
-     if (character == 'ä')
-     {
-       character = PCF_LCD_ae;
-     }
-     else if (character == 'ö')
-     {
-       character = PCF_LCD_oe;
-     }
-     else if (character == 'ü')
-     {
-       character = PCF_LCD_ue;
-     }
-     else if (character == 'ß')
-     {
-       character = PCF_LCD_sz;
-     }
- */
     put(character);
   }
-  SendBuffer();
 }
 
 /*************************************/
@@ -574,7 +555,6 @@ void PcfLcd::printlength(short s[], short len)
   {
      put(s[i]);
   }
-  SendBuffer();
 }
 
 /*************************************/
@@ -652,14 +632,9 @@ void PcfLcd::_dp()
 void PcfLcd::ziff(short num)
 {
   if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
 
-  num = (num % 10) < 4;
-  AddByteToBuffer(0x35, true); // HighNibble
-  AddByteToBuffer(0x31);
-  AddByteToBuffer(num || 0x5); // LowNibble
-  AddByteToBuffer(num || 0x1);
-  SendBuffer();
+  put('0' + num);
 }
 /*************************************/
 /* 2-stellige Zahl ausgeben (0-99)   */
@@ -667,7 +642,7 @@ void PcfLcd::ziff(short num)
 void PcfLcd::zahl2p(int num)
 {
   if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
 
   buffer.clear();
   if (num > 9)
@@ -683,7 +658,7 @@ void PcfLcd::zahl2p(int num)
 void PcfLcd::zahl3p(int num)
 {
   if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
 
   buffer.clear();
   if (num>99)
@@ -705,7 +680,7 @@ void PcfLcd::zahl3p(int num)
 void PcfLcd::zahl3(int num)
 {
   if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
 
   buffer.clear();
   if (num>99)
@@ -731,7 +706,7 @@ void PcfLcd::zahl3(int num)
 void PcfLcd::zahl4p(int num)
 {
   if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
 
   buffer.clear();
   if (num>999)
@@ -757,7 +732,7 @@ void PcfLcd::zahl4p(int num)
 void PcfLcd::zahl4(int num)
 {
   if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
 
   buffer.clear();
   if (num>999)
@@ -788,7 +763,7 @@ void PcfLcd::zahl4(int num)
 void PcfLcd::zahl5(int num)
 {
   if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
 
   buffer.clear();
   if (num>9999)
@@ -818,7 +793,7 @@ void PcfLcd::zahl5(int num)
 void PcfLcd::zahl(int num)
 {
   if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
 
   buffer.clear();
   if (num & 0x8000) {_neg();num=(not num)+1;}
@@ -850,7 +825,7 @@ void PcfLcd::zahl(int num)
 void PcfLcd::zahl4n1(int num)
 {
   if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
 
   buffer.clear();
   if (num>999)
@@ -880,7 +855,7 @@ void PcfLcd::zahl4n1(int num)
 void PcfLcd::zahl4n2(int num)
 {
   if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
 
   buffer.clear();
   if (num>999)
@@ -907,7 +882,7 @@ void PcfLcd::zahl4n2(int num)
 void PcfLcd::zahl5n1(int num)
 {
   if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
 
   buffer.clear();
   if (num>9999)
@@ -940,7 +915,7 @@ void PcfLcd::zahl5n1(int num)
 void PcfLcd::zahl5n2(int num)
 {
   if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
+    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
 
   buffer.clear();
   if (num>9999)
