@@ -5,7 +5,7 @@ LDLIBS=-lboost_program_options
 ds1631: I2C_Device.o ds1631.o PcfLcd.o main.o 
 	c++ $(LDFLAGS) -o ds1631 main.o I2C_Device.o ds1631.o PcfLcd.o $(LDLIBS)
 
-main.o: main.cpp
+main.o: main.cpp PcfLcd.hpp
 	c++ $(CPPFLAGS) main.cpp
 
 I2C_Device.o: I2C_Device.cpp

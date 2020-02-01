@@ -37,13 +37,15 @@ public:
     
     short AddByteToBuffer(short byte, bool clearbuffer = false);
     bool SendBuffer();
-    void WriteCmd(short cmd);
+    void WriteCmd(short const cmd, bool const fourBitMode = true);
+    void WriteData(short const cmd);
+    void WriteOut(short const cmd, bool const RegisterSelect);
 
     void clear();
     void home();
-    void delline(short lineNr);
-    void line(short lineNr);
-    void gotopos(short lineNr, short col);
+    void delline(short const lineNr);
+    void line(short const lineNr);
+    void gotopos(short const lineNr, short const col);
     void cursorleft();
     void cursorright();
     void setcursor(short cursor);
@@ -88,8 +90,9 @@ protected :
 
     std::vector<unsigned char> buffer;
 
-    const short CharsPerLine = 20;                        // für 4x20 & zweizeilige LCD
-    const short Line[5] = {0x80, 0x80, 0xC0, 0x94, 0xD4}; // für 4x20 & zweizeilige LCD
+    static const short NumerOfLines = 4;                              // für 4x20 & zweizeilige LCD
+    static const short CharsPerLine = 20;                             // für 4x20 & zweizeilige LCD
+    const short Line[NumerOfLines] = {0x80, 0xC0, 0x94, 0xD4}; // für 4x20 & zweizeilige LCD
     //const CharsPerLine=16;                  // für 4x16 LCD
     //const Line[]= 0x80,0x80,0xC0,0x90,0xD0; // für 4x16 LCD
 };

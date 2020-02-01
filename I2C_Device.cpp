@@ -62,8 +62,9 @@ bool I2C_Device::WriteByte(unsigned char const *buffer, const int length)
     bool ret = true;
     if (verbose)
     {
-      std::cout << "   " << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << getAddress() << ") - " << length << std::endl;
+      std::cout << "\t" << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << getAddress() << ") - " << length << std::endl;
       std::vector<char> vec(buffer, buffer + length);
+      std::cout << "\t" << "\t" ;
       for (int i: vec) {
          std::cout << "-" << i << "-";
       }
@@ -88,7 +89,7 @@ bool I2C_Device::WriteByte(unsigned char const *buffer, const int length)
 bool I2C_Device::ReadByte(unsigned char *buffer, const int length)
 {
     if (verbose)
-        std::cout << "   " << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << getAddress() << ")-" << length << std::endl;
+        std::cout << "\t" << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << getAddress() << ")-" << length << std::endl;
     int16_t result = 0;
     if (length > 2)
     {
