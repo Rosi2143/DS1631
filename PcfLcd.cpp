@@ -35,6 +35,9 @@
 #include <chrono>
 #include <ctime>
 #include <iostream>
+#include <cstdlib>
+#include <cmath>
+#include <ctime>
 
 // PCF_LCD ASCII Codes
 #define PCF_LCD_AE  0
@@ -426,7 +429,7 @@ void PcfLcd::delline(short const LineNr)
   line(LineNr);
   for (i = 0; i < (CharsPerLine - 1); i++)
   {
-    _spc();
+    put(' ');
   }
   SendBuffer();
 }
@@ -562,71 +565,6 @@ void PcfLcd::printlength(short s[], short len)
 /*************************************/
 
 /*************************************/
-/* Ziffernausgabe                    */
-/* (benötigt v. Zahlfunktionen)      */
-/*************************************/
-void PcfLcd::_ziff(short num)
-{
-  if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
-
-  AddByteToBuffer(0x35);
-  AddByteToBuffer(0x31);
-  AddByteToBuffer((num < 4) || 0x5);
-  AddByteToBuffer((num < 4) || 0x1);
-}
-void PcfLcd::_spc()
-{
-  if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
-
-  AddByteToBuffer(0x25);
-  AddByteToBuffer(0x21);
-  AddByteToBuffer(0x05);
-  AddByteToBuffer(0x01);
-}
-void PcfLcd::_neg()
-{
-  if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
-
-  AddByteToBuffer(0x25);
-  AddByteToBuffer(0x21);
-  AddByteToBuffer(0xD5);
-  AddByteToBuffer(0xD1);
-}
-void PcfLcd::_dt()
-{
-  if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
-
-  AddByteToBuffer(0x25);
-  AddByteToBuffer(0x21);
-  AddByteToBuffer(0xC5);
-  AddByteToBuffer(0xC1);
-}
-void PcfLcd::_pt()
-{
-  if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
-
-    AddByteToBuffer(0x25);
-    AddByteToBuffer(0x21);
-    AddByteToBuffer(0xE5);
-    AddByteToBuffer(0xE1);
-}
-void PcfLcd::_dp()
-{
-  if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
-
-  AddByteToBuffer(0x35);
-  AddByteToBuffer(0x31);
-  AddByteToBuffer(0xA5);
-  AddByteToBuffer(0xA1);
-}
-
-/*************************************/
 /* Einzelziffer                      */
 /*************************************/
 void PcfLcd::ziff(short num)
@@ -636,306 +574,35 @@ void PcfLcd::ziff(short num)
 
   put('0' + num);
 }
-/*************************************/
-/* 2-stellige Zahl ausgeben (0-99)   */
-/*************************************/
-void PcfLcd::zahl2p(int num)
-{
-  if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
-
-  buffer.clear();
-  if (num > 9)
-    _ziff((num % 100) / 10);
-  else
-    _spc();
-  _ziff(num % 10);
-  SendBuffer();
-}
-/*************************************/
-/* 3-stellige Zahl ausgeben (0-999)  */
-/*************************************/
-void PcfLcd::zahl3p(int num)
-{
-  if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
-
-  buffer.clear();
-  if (num>99)
-    _ziff((num % 1000)/100);
-  else
-    _spc();
-  if (num>9)
-    _ziff((num % 100) /10);
-  else
-    _spc();
-  _ziff(num % 10);
-  SendBuffer();
-}
-
-/*************************************/
-/* 3-stellige Zahl ausgeben(pos+neg) */
-/* -99 bis 999                       */
-/*************************************/
-void PcfLcd::zahl3(int num)
-{
-  if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
-
-  buffer.clear();
-  if (num>99)
-    _ziff((num % 1000)/ 100);
-  else if (num & 0x8000)
-    {
-      _neg();
-      num=(not num) + 1;
-    }
-  else 
-    _spc();
-  if (num>9)
-    _ziff((num % 100) / 10);
-  else
-    _spc();
-  _ziff(num % 10);
-  SendBuffer();
-}
-
-/*************************************/
-/* 4-stellige Zahl ausgaben (0-9999) */
-/*************************************/
-void PcfLcd::zahl4p(int num)
-{
-  if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
-
-  buffer.clear();
-  if (num>999)
-    _ziff((num % 10000)/ 1000);
-  else 
-    _spc();
-  if (num> 99)
-    _ziff((num % 1000) / 100 );
-  else
-    _spc();
-  if (num>9)
-    _ziff((num % 100)  / 10  );
-  else
-    _spc();
-  _ziff(num % 10);
-  SendBuffer();
-}
-
-/*************************************/
-/* 4-stellige Zahl ausgaben(pos+neg) */
-/* -999 bis 9999                     */
-/*************************************/
-void PcfLcd::zahl4(int num)
-{
-  if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
-
-  buffer.clear();
-  if (num>999)
-    _ziff((num % 10000)/ 1000);
-  else if (num & 0x8000)
-  {
-    _neg();
-    num=(not num) + 1;
-  }
-  else
-    _spc();
-  if (num>99)
-    _ziff((num % 1000)/ 100);
-  else
-    _spc();
-  if (num> 9)
-    _ziff((num % 100) / 10 );
-  else
-    _spc();
-  _ziff(num % 10);
-  SendBuffer();
-}
-
-/*************************************/
-/* 5-stellige Zahl ausgaben(positiv) */
-/* 0 bis 32767                       */
-/*************************************/
-void PcfLcd::zahl5(int num)
-{
-  if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
-
-  buffer.clear();
-  if (num>9999)
-    _ziff( num / 10000);
-  else
-    _spc();
-  if (num> 999)
-    _ziff((num % 10000)/1000);
-  else 
-    _spc();
-  if (num>  99)
-    _ziff((num % 1000) /100 );
-  else
-    _spc();
-  if (num>   9)
-    _ziff((num % 100)  /10  );
-  else
-    _spc();
-  _ziff(num % 10);
-  SendBuffer();
-}
 
 /*************************************/
 /* Integer-Zahl ausgaben(pos+neg)    */
-/* 6-stellig ! -32768 bis _32767     */
 /*************************************/
 void PcfLcd::zahl(int num)
 {
   if (i2c_device->isVerbose())
     std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
 
-  buffer.clear();
-  if (num & 0x8000) {_neg();num=(not num)+1;}
-      else _spc();
-  if (num>9999)
-    _ziff( num / 10000);
-  else 
-    _spc();
-  if (num> 999)
-    _ziff((num % 10000)/1000);
-  else 
-    _spc();
-  if (num>  99)
-    _ziff((num % 1000) /100 );
-  else 
-    _spc();
-  if (num>   9)
-    _ziff((num % 100)  /10  );
-  else
-    _spc();
-  _ziff(num % 10);
-  SendBuffer();
-}
-/*************************************/
-/* formatierte Zahlausgaben          */
-/* Format: ##0,0 (-99,9 - 999,9)     */
-/* -999 - 9999 entspr. -99,9 - 999,9 */
-/*************************************/
-void PcfLcd::zahl4n1(int num)
-{
-  if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
-
-  buffer.clear();
-  if (num>999)
-   _ziff((num % 10000)/ 1000);
-  else if (num & 0x8000)
-  {
-    _neg();
-    num=(not num) + 1;
-  }
-  else
-    _spc();
-  if (num>99)
-    _ziff((num % 1000)/ 100);
-  else
-    _spc();
-  _ziff((num % 100) / 10);
-  _dt();
-  _ziff(num % 10);
-  SendBuffer();
+  std::string Number = std::to_string(num);
+  
+  print2(Number);
 }
 
 /*************************************/
-/* formatierte Zahlausgaben          */
-/* Format: #0,00 (-9,99 - 99,99)     */
-/* -999 - 9999 entspr. -9,99 - 99,99 */
+/* Rationale-Zahl ausgaben(pos+neg)    */
 /*************************************/
-void PcfLcd::zahl4n2(int num)
+void PcfLcd::zahl(float num, short precision)
 {
   if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
+    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << " - " << precision << std::endl;
 
-  buffer.clear();
-  if (num>999)
-   _ziff((num % 10000)/ 1000);
-  else if (num & 0x8000)
-  {
-    _neg();
-    num=(not num) + 1;
-  }
-  else
-    _spc();
-  _ziff((num % 1000)/ 100);
-  _dt();
-  _ziff((num % 100) / 10);
-  _ziff(num % 10);
-  SendBuffer();
-}
-
-/*************************************/
-/* formatierte Zahlausgaben          */
-/* Format: ###0,0 (-999,9 - 3276,7)  */
-/* -9999 - 32767 ^= -999,9 - 3276,7  */
-/*************************************/
-void PcfLcd::zahl5n1(int num)
-{
-  if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
-
-  buffer.clear();
-  if (num>9999)
-    _ziff((num % 100000)/ 10000);
-  else if (num & 0x8000)
-  {
-    _neg();
-    num=(not num) + 1;
-  }
-  else _spc();
-  if (num>999)
-    _ziff((num % 10000)/1000);
-  else
-    _spc();
-  if (num> 99)
-    _ziff((num % 1000) /100 );
-  else
-    _spc();
-  _ziff((num % 100) / 10);
-  _dt();
-  _ziff(num % 10);
-  SendBuffer();
-}
-
-/*************************************/
-/* formatierte Zahlausgaben          */
-/* Format: ###0,0 (-99,99 - 327,67)  */
-/* -9999 - 32767 ^= -99,99 - 327,67  */
-/*************************************/
-void PcfLcd::zahl5n2(int num)
-{
-  if (i2c_device->isVerbose())
-    std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ") - " << num << std::endl;
-
-  buffer.clear();
-  if (num>9999)
-    _ziff((num % 100000)/ 10000 + 0x30);
-  else if (num & 0x8000)
-  {
-    _neg();
-    num=(not num) + 1;
-  }
-  else
-    _spc();
-  if (num>999)
-    _ziff((num % 10000)/ 1000);
-  else
-    _spc();
-  _ziff((num % 1000)/ 100);
-  _dt();
-  _ziff((num % 100) / 10);
-  _ziff(num % 10);
-  SendBuffer();
+  std::string Number = std::to_string((int)num);
+  print2(Number);
+  put('.');
+  float f3;
+  float f2 = std::modf(num, &f3);
+  Number = std::to_string((int)(f2*std::pow(10,precision)));
+  print2(Number);
 }
 
 /*************************************/
@@ -944,8 +611,9 @@ void PcfLcd::zahl5n2(int num)
 
 /*************************************/
 /* Uhrzeit ausgeben                  */
+/* 0= h:m:s, 1= hh:mm:ss, 2= h:m, 3= hh:mm */
 /*************************************/
-void PcfLcd::time(short format)//0= h:m:s, 1= hh:mm:ss, 2= h:m, 3= hh:mm
+void PcfLcd::time(short format)
 {
   if (i2c_device->isVerbose())
     std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
@@ -960,39 +628,40 @@ void PcfLcd::time(short format)//0= h:m:s, 1= hh:mm:ss, 2= h:m, 3= hh:mm
 
   buffer.clear();
   if (format && 1)
-    _ziff(hour / 10);
+    ziff(hour / 10);
   else if (hour > 9)
-    _ziff(hour / 10);
+    ziff(hour / 10);
   else
-    _spc();
-  _ziff(hour % 10);
-  _dp();
+    put(' ');
+  ziff(hour % 10);
+  put(':');
   if (format && 1)
-    _ziff(minute / 10);
+    ziff(minute / 10);
   else if (minute > 9)
-    _ziff(minute / 10);
+    ziff(minute / 10);
   else
-    _spc();
-  _ziff(minute % 10);
+    put(' ');
+  ziff(minute % 10);
   if ((format && 2) == 0)
   {
-    _dp();
+    put(':');
     if (format && 1)
-      _ziff(second / 10);
+      ziff(second / 10);
     else if (second>9)
-      _ziff(second / 10);
+      ziff(second / 10);
     else
-      _spc();
-    _ziff(second % 10);
+      put(' ');
+    ziff(second % 10);
   }
   SendBuffer();
 }
 
 /*************************************/
 /* Datum ausgeben                    */
+/* 0= d.m.yyyy, 1= dd.mm.yyyy        */
+/* 2= d.m., 3= dd.mm., 4= d.m.yy, 5= dd.mm.yy */
 /*************************************/
-void PcfLcd::date(short format)//0= d.m.yyyy, 1= dd.mm.yyyy
-                               //2= d.m., 3= dd.mm., 4= d.m.yy, 5= dd.mm.yy
+void PcfLcd::date(short format)
 {
   if (i2c_device->isVerbose())
     std::cout << typeid(*this).name() << "::" << __func__ << "(0x" << std::hex << i2c_device->getAddress() << ")" << std::endl;
@@ -1007,30 +676,30 @@ void PcfLcd::date(short format)//0= d.m.yyyy, 1= dd.mm.yyyy
 
   buffer.clear();
   if (format && 1)
-    _ziff(day / 10);
+    ziff(day / 10);
   else if (day>9)
-    _ziff(day / 10);
+    ziff(day / 10);
   else
-    _spc();
-  _ziff(day % 10);
-  _pt();
+    put(' ');
+  ziff(day % 10);
+  put('-');
   if (format && 1)
-    _ziff(month / 10);
+    ziff(month / 10);
   else if (month>9)
-    _ziff(month / 10);
+    ziff(month / 10);
   else 
-    _spc();
-  _ziff(month % 10);
-  _pt();
+    put(' ');
+  ziff(month % 10);
+  put('-');
   if ((format && 2)==0)
   {
     if ((format && 4)==0)
     {
-      _ziff(year / 1000);
-      _ziff((year / 100) % 10);
+      ziff(year / 1000);
+      ziff((year / 100) % 10);
     }
-    _ziff((year / 10) % 10);
-    _ziff(year % 10);
+    ziff((year / 10) % 10);
+    ziff(year % 10);
   }
   SendBuffer();
 }

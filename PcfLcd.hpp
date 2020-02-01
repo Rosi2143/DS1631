@@ -56,17 +56,8 @@ public:
     void printlength(short s[], short len);
 
     void ziff(short num);
-    void zahl2p(int num);
-    void zahl3p(int num);
-    void zahl3(int num);
-    void zahl4p(int num);
-    void zahl4(int num);
-    void zahl5(int num);
     void zahl(int num);
-    void zahl4n1(int num);
-    void zahl4n2(int num);
-    void zahl5n1(int num);
-    void zahl5n2(int num);
+    void zahl(float num, short precision);
 
     void time(short format);
     void date(short format);
@@ -79,13 +70,6 @@ public:
 
 
 protected :
-    void _ziff(short num);
-    void _spc();
-    void _neg();
-    void _dt();
-    void _pt();
-    void _dp();
-
     short lightState;
 
     std::vector<unsigned char> buffer;

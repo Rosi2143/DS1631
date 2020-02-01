@@ -154,12 +154,16 @@ int main(int ac, char **av)
         display.put('A');
         display.put('b');
         display.put('c');
-        
-        display.line(1);
+        display.put('-');
         display.print2("String");
+        display.put('-');
 
         display.line(2);
-        display.ziff(0);
+        display.zahl(12345);
+        display.put('-');
+        display.zahl(-4321);
+        display.put('-');
+        display.zahl(678.90,2);
     }
     return (0);
 }
